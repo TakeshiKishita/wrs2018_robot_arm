@@ -20,12 +20,6 @@ void setup() {
     }
 }
 
-int change_angle(int arm_angle, int controller_angle) {
-
-    int result = arm_angle * controller_angle;
-    return result;
-}
-
 void loop() {
 
     // アームの角度を読み取る
@@ -40,13 +34,13 @@ void loop() {
     // コントローラーの角度を受信する
     String controller_angle_str;
     if (Serial.available() > 0){
-        controller_angle_str = Serial.readStringUntil(';');
+        controller_angle_str = Serial.readStringUntil('\r');
+        Serial.println("[get_num]"+controller_angle_str);
     }
 
     // CSV形式のコントローラ角度を各関節に分解する
     int ctrl_axis[6];
     ctrl_axis[0] = atoi(strtok(controller_angle_str.c_str(),","));
-    Serial.println(ctrl_axis[0]);         //1つ目のトークン表示
     ctrl_axis[1] = atoi(strtok(NULL,","));
     ctrl_axis[2] = atoi(strtok(NULL,","));
     ctrl_axis[3] = atoi(strtok(NULL,","));
@@ -54,6 +48,8 @@ void loop() {
     ctrl_axis[5] = atoi(strtok(NULL,","));
 
     for(int x : ctrl_axis){
+      // トークンの値を出力
+      Serial.println(ctrl_axis[x]);
 	     if (ctrl_axis[x] > arm_axis[x]) {
          //アームの角度が小さかった場合
          digitalWrite(arm_axis_down[x],LOW);
@@ -69,5 +65,5 @@ void loop() {
        }
      }
 
-    delay(100);
+    delay(1000);
 }
