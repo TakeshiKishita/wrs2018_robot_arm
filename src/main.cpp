@@ -10,6 +10,8 @@ const int axis_num = 6;
 // モータードライバへ出力するoutチャンネル
 const int arm_axis_up[axis_num] = {2,4,6,8,10,12};
 const int arm_axis_down[axis_num] = {3,5,7,9,11,13};
+// 処理遅延時間
+const int delay_time = 1000;
 
 void setup() {
     Serial.begin( 9600 );
@@ -31,12 +33,14 @@ void loop() {
     arm_axis[4] = analogRead(4);
     arm_axis[5] = analogRead(5);
 
-    // コントローラーの角度を受信する
-    String controller_angle_str;
-    if (Serial.available() > 0){
-        controller_angle_str = Serial.readStringUntil('\r');
-        Serial.println("[get_num]"+controller_angle_str);
+    // シリアル通信がない場合は処理しない
+    if (Serial.available() == 0){
+      delay(delay_time);
+      return;
     }
+    // コントローラーの角度を受信する
+    String controller_angle_str = Serial.readStringUntil("\r\n");
+    Serial.println("[get_num]"+controller_angle_str);
 
     // CSV形式のコントローラ角度を各関節に分解する
     int ctrl_axis[6];
@@ -47,23 +51,26 @@ void loop() {
     ctrl_axis[4] = atoi(strtok(NULL,","));
     ctrl_axis[5] = atoi(strtok(NULL,","));
 
-    for(int x : ctrl_axis){
+    for (size_t x = 0; x < axis_num; x++) {
       // トークンの値を出力
-      Serial.println(ctrl_axis[x]);
-	     if (ctrl_axis[x] > arm_axis[x]) {
+      Serial.print(x);
+      Serial.print(" : ctrl_axis "+String(ctrl_axis[x]));
+      Serial.println(" : arm_axis "+String(arm_axis[x]));
+
+	    if (ctrl_axis[x] > arm_axis[x]) {
          //アームの角度が小さかった場合
          digitalWrite(arm_axis_down[x],LOW);
          digitalWrite(arm_axis_up[x],HIGH);
-       }else if (ctrl_axis[x] < arm_axis[x]) {
+      }else if (ctrl_axis[x] < arm_axis[x]) {
          //アームの角度が大きかった場合
          digitalWrite(arm_axis_up[x],LOW);
          digitalWrite(arm_axis_down[x],HIGH);
-       } else {
+      } else {
          //角度が同じだった場合
          digitalWrite(arm_axis_down[x],LOW);
          digitalWrite(arm_axis_up[x],LOW);
-       }
-     }
+      }
+    }
 
-    delay(1000);
+    delay(delay_time);
 }
