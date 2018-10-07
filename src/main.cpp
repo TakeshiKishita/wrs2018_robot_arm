@@ -17,16 +17,28 @@ const int delay_time = 500;
 // アーム格納時の初期角度
 int initial_angle[axis_num];
 
-int ctrl_axis[6];
+int ctrl_axis[18];
 void ReceiveMassage(int n){
   Serial.print("Received ");
   Serial.println(n);
-  // TODO 角度の読み取り方法を変更
-  for (int i = 0; i < n; i++) {
-    char c = Wire.read();
-    Serial.print("Byte ");
-    Serial.println((int)c);
-    ctrl_axis[i] = (int)c;
+
+  // 不要数値
+  char _ = Wire.read();
+
+  // 受け取った値３つをつなげて数値に変換し、リストに格納する
+  int index = 0;
+  char msg = "";
+  for (int i = 0; i < n-1; i++) {
+    char ret = Wire.read();
+    msg += ret;
+    if ((i+1)%3 == 0) {
+      //３の倍数だった場合、配列に追加
+      ctrl_axis[index] = (int)msg;
+      Serial.print("msg ");
+      Serial.println((int)msg);
+      index++;
+      msg = "";
+    }
   }
 
   // コントローラーの角度を受信する
