@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
-
+#include <stdio.h>
 //
 // ロボットアーム側制御
 //
@@ -22,22 +22,35 @@ void ReceiveMassage(int n){
   Serial.print("Received ");
   Serial.println(n);
 
-  // 不要数値
-  char _ = Wire.read();
-
   // 受け取った値３つをつなげて数値に変換し、リストに格納する
   int index = 0;
-  char msg = "";
+  char msg[3] = "";
   for (int i = 0; i < n-1; i++) {
-    char ret = Wire.read();
-    msg += ret;
-    if ((i+1)%3 == 0) {
+    int ret = Wire.read();
+    if (i == 0) {
+      // 最初の文字はパスする
+      continue;
+    }
+    if (strlen(msg) ==3){
+      Serial.print("lan3");
+      char msg[3] = {"\0"};
+    }
+    char buf[1] = "";
+    sprintf(buf, "%d", ret);
+    // Serial.print("buf: ");
+    // Serial.println(buf);
+    strcat(msg, buf);
+
+    if (i%3 == 0) {
       //３の倍数だった場合、配列に追加
-      ctrl_axis[index] = (int)msg;
-      Serial.print("msg ");
-      Serial.println((int)msg);
+      Serial.print("msg");
+      Serial.println(msg);
+      ctrl_axis[index] = atoi(msg);
+      Serial.print("ctrl_axis[");
+      Serial.print(index);
+      Serial.print("]=");
+      Serial.println(ctrl_axis[index]);
       index++;
-      msg = "";
     }
   }
 
