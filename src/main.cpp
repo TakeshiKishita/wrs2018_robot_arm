@@ -31,14 +31,8 @@ void ReceiveMassage(int n){
       // 最初の文字はパスする
       continue;
     }
-    if (strlen(msg) ==3){
-      Serial.print("lan3");
-      char msg[3] = {"\0"};
-    }
     char buf[1] = "";
     sprintf(buf, "%d", ret);
-    // Serial.print("buf: ");
-    // Serial.println(buf);
     strcat(msg, buf);
 
     if (i%3 == 0) {
@@ -46,6 +40,8 @@ void ReceiveMassage(int n){
       Serial.print("msg");
       Serial.println(msg);
       ctrl_axis[index] = atoi(msg);
+
+      char msg[3] = {"\0"};
       Serial.print("ctrl_axis[");
       Serial.print(index);
       Serial.print("]=");
