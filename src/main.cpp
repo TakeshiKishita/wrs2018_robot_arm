@@ -21,10 +21,18 @@ int initial_arm_angle[axis_num];
 //初期アングル用変数
 int standard_index = 0;
 
-const int pwm = 255*0.8;
+const int pwm = 255*0.4;
 
 int ctrl_axis[axis_num];
 void ReceiveMassage(int n){
+
+  if (n == 0) {
+    //i2cの接続がない場合は動作しない
+    for (size_t i = 0; i < axis_num; i++) {
+      analogWrite(arm_axis_down[i], 0);
+      analogWrite(arm_axis_up[i], 0);
+    }
+  }
 
   // 受け取った値３つをつなげて数値に変換し、リストに格納する
   int index = 0;
@@ -59,28 +67,31 @@ void ReceiveMassage(int n){
 
   // アームの角度を読み取る
   int arm_axis[axis_num];
-  arm_axis[0] = analogRead(0);
-  arm_axis[1] = analogRead(1);
+  arm_axis[0] = analogRead(1);
+  arm_axis[1] = analogRead(2);
 
   for (size_t x = 0; x < axis_num; x++) {
-    if (ctrl_axis[x] > initial_ctrl_angle[x]){
-      //初期位置よりも小さかった場合は動かさない
-      continue;
-    }
 
     int arm_angle = arm_axis[x] - initial_arm_angle[x];
     int ctrl_angle = ctrl_axis[x] - initial_ctrl_angle[x];
-    // トークンの値を出力
-    Serial.print(x);
-    Serial.print(":c "+String(ctrl_axis[x]));
-    Serial.print(":a "+String(arm_axis[x]));
+    if (x == 1){
+      ctrl_angle *= -1;
+      arm_angle *= -1;
+    }
 
-    if (abs(ctrl_angle-arm_angle) < 10) {
-      // 変化が小さかった場合も動かさない
+    if (ctrl_angle < 0){
+      //初期位置よりも小さかった場合は動かさない
+      Serial.print(x);
+      Serial.print(": continue");
       continue;
     }
 
-    if (abs(ctrl_angle-arm_angle) < 10) {
+    // トークンの値を出力
+    Serial.print(x);
+    Serial.print(":c "+String(ctrl_angle));
+    Serial.print(":a "+String(arm_angle));
+
+    if (abs(ctrl_angle-arm_angle) < 20) {
        //角度が同じだった場合
        analogWrite(arm_axis_down[x], 0);
        analogWrite(arm_axis_up[x], 0);
@@ -105,8 +116,8 @@ void setup() {
     Wire.begin(slave_address);
 
     // アーム格納時の初期角度を設定
-    initial_arm_angle[0] = analogRead(0);
-    initial_arm_angle[1] = analogRead(1);
+    initial_arm_angle[0] = analogRead(1);
+    initial_arm_angle[1] = analogRead(2);
 
     for (size_t i = 0; i < axis_num; i++) {
       pinMode(arm_axis_up[i],OUTPUT);
