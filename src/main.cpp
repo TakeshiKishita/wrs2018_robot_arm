@@ -8,10 +8,10 @@
 
 const int slave_address = 0x10;
 // アームの軸数
-const int axis_num = 6;
+const int axis_num = 2;
 // モータードライバへ出力するoutチャンネル
-const int arm_axis_up[axis_num] = {2,4,6,8,10,12};
-const int arm_axis_down[axis_num] = {3,5,7,9,11,13};
+const int arm_axis_up[axis_num] = {4,8};
+const int arm_axis_down[axis_num] = {5,9};
 // 処理遅延時間
 const int delay_time = 500;
 // アーム格納時の初期角度
@@ -20,6 +20,8 @@ int initial_arm_angle[axis_num];
 
 //初期アングル用変数
 int standard_index = 0;
+
+const int pwm = 255*0.8;
 
 int ctrl_axis[axis_num];
 void ReceiveMassage(int n){
@@ -59,10 +61,6 @@ void ReceiveMassage(int n){
   int arm_axis[axis_num];
   arm_axis[0] = analogRead(0);
   arm_axis[1] = analogRead(1);
-  arm_axis[2] = analogRead(2);
-  arm_axis[3] = analogRead(3);
-  arm_axis[4] = analogRead(4);
-  arm_axis[5] = analogRead(5);
 
   for (size_t x = 0; x < axis_num; x++) {
     if (ctrl_axis[x] > initial_ctrl_angle[x]){
@@ -82,20 +80,20 @@ void ReceiveMassage(int n){
       continue;
     }
 
-    if (ctrl_angle > arm_angle) {
-       //アームの角度が小さかった場合
-       digitalWrite(arm_axis_down[x],LOW);
-       digitalWrite(arm_axis_up[x],HIGH);
+    if (abs(ctrl_angle-arm_angle) < 10) {
+       //角度が同じだった場合
+       analogWrite(arm_axis_down[x], 0);
+       analogWrite(arm_axis_up[x], 0);
        Serial.print(" A, ");
+    } else if (ctrl_angle > arm_angle) {
+       //アームの角度が小さかった場合
+       analogWrite(arm_axis_down[x], 0);
+       analogWrite(arm_axis_up[x], pwm);
+       Serial.print(" B, ");
     } else if (ctrl_angle < arm_angle) {
        //アームの角度が大きかった場合
-       digitalWrite(arm_axis_up[x],LOW);
-       digitalWrite(arm_axis_down[x],HIGH);
-       Serial.print(" B, ");
-    } else {
-       //角度が同じだった場合
-       digitalWrite(arm_axis_down[x],LOW);
-       digitalWrite(arm_axis_up[x],LOW);
+       analogWrite(arm_axis_up[x], 0);
+       analogWrite(arm_axis_down[x], pwm);
        Serial.print(" C, ");
     }
   }
@@ -109,10 +107,6 @@ void setup() {
     // アーム格納時の初期角度を設定
     initial_arm_angle[0] = analogRead(0);
     initial_arm_angle[1] = analogRead(1);
-    initial_arm_angle[2] = analogRead(2);
-    initial_arm_angle[3] = analogRead(3);
-    initial_arm_angle[4] = analogRead(4);
-    initial_arm_angle[5] = analogRead(5);
 
     for (size_t i = 0; i < axis_num; i++) {
       pinMode(arm_axis_up[i],OUTPUT);
