@@ -14,6 +14,8 @@ const int arm_axis_up[axis_num] = {4,8};
 const int arm_axis_down[axis_num] = {5,9};
 // 処理遅延時間
 const int delay_time = 500;
+// コントローラ遊び角度
+const int asobi = 30;
 // アーム格納時の初期角度
 int initial_ctrl_angle[axis_num];
 int initial_arm_angle[axis_num];
@@ -21,18 +23,10 @@ int initial_arm_angle[axis_num];
 //初期アングル用変数
 int standard_index = 0;
 
-const int pwm = 255*0.4;
+const int pwm = 250;
 
 int ctrl_axis[axis_num];
 void ReceiveMassage(int n){
-
-  if (n == 0) {
-    //i2cの接続がない場合は動作しない
-    for (size_t i = 0; i < axis_num; i++) {
-      analogWrite(arm_axis_down[i], 0);
-      analogWrite(arm_axis_up[i], 0);
-    }
-  }
 
   // 受け取った値３つをつなげて数値に変換し、リストに格納する
   int index = 0;
@@ -81,8 +75,19 @@ void ReceiveMassage(int n){
 
     if (ctrl_angle < 0){
       //初期位置よりも小さかった場合は動かさない
+      analogWrite(arm_axis_down[x], 0);
+      analogWrite(arm_axis_up[x], 0);
       Serial.print(x);
-      Serial.print(": continue");
+      Serial.print(": continue_ctrl");
+      continue;
+    }
+
+    if (arm_angle < -5){
+      //初期位置よりも小さかった場合は動かさない
+      analogWrite(arm_axis_down[x], 0);
+      analogWrite(arm_axis_up[x], 0);
+      Serial.print(x);
+      Serial.print(": continue_arm");
       continue;
     }
 
@@ -91,7 +96,7 @@ void ReceiveMassage(int n){
     Serial.print(":c "+String(ctrl_angle));
     Serial.print(":a "+String(arm_angle));
 
-    if (abs(ctrl_angle-arm_angle) < 20) {
+    if (abs(ctrl_angle-arm_angle) < asobi) {
        //角度が同じだった場合
        analogWrite(arm_axis_down[x], 0);
        analogWrite(arm_axis_up[x], 0);
