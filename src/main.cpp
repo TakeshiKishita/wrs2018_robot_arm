@@ -23,14 +23,11 @@ int standard_index = 0;
 
 int ctrl_axis[axis_num];
 void ReceiveMassage(int n){
-  Serial.print("Received ");
-  Serial.println(n);
 
   // 受け取った値３つをつなげて数値に変換し、リストに格納する
   int index = 0;
   String msg;
   for (int i = 0; i < n; i++) {
-    Serial.print(i);
     int ret = Wire.read();
     if (i == 0) {
       // 最初の文字はパスする
@@ -40,14 +37,7 @@ void ReceiveMassage(int n){
 
     if (i%3 == 0) {
       //３の倍数だった場合、配列に追加
-      Serial.print("msg");
-      Serial.println(msg);
       ctrl_axis[index] = msg.toInt();
-
-      Serial.print("ctrl_axis[");
-      Serial.print(index);
-      Serial.print("]=");
-      Serial.println(ctrl_axis[index]);
       msg = "";
       index++;
     }
@@ -75,11 +65,6 @@ void ReceiveMassage(int n){
   arm_axis[5] = analogRead(5);
 
   for (size_t x = 0; x < axis_num; x++) {
-    // トークンの値を出力
-    Serial.print(x);
-    Serial.print(" : ctrl_axis "+String(ctrl_axis[x]));
-    Serial.println(" : arm_axis "+String(arm_axis[x]));
-
     if (ctrl_axis[x] > initial_ctrl_angle[x]){
       //初期位置よりも小さかった場合は動かさない
       continue;
@@ -87,25 +72,34 @@ void ReceiveMassage(int n){
 
     int arm_angle = arm_axis[x] - initial_arm_angle[x];
     int ctrl_angle = ctrl_axis[x] - initial_ctrl_angle[x];
+    // トークンの値を出力
+    Serial.print(x);
+    Serial.print(":c "+String(ctrl_axis[x]));
+    Serial.print(":a "+String(arm_axis[x]));
 
-    if (initial_arm_angle[x] > arm_axis[x]) {
-      // アームの角度が初期位置よりも小さかった場合(保険)
-      digitalWrite(arm_axis_down[x],LOW);
-      digitalWrite(arm_axis_up[x],HIGH);
-    } else if (ctrl_angle > arm_angle) {
+    if (abs(ctrl_angle-arm_angle) < 10) {
+      // 変化が小さかった場合も動かさない
+      continue;
+    }
+
+    if (ctrl_angle > arm_angle) {
        //アームの角度が小さかった場合
        digitalWrite(arm_axis_down[x],LOW);
        digitalWrite(arm_axis_up[x],HIGH);
+       Serial.print(" A, ");
     } else if (ctrl_angle < arm_angle) {
        //アームの角度が大きかった場合
        digitalWrite(arm_axis_up[x],LOW);
        digitalWrite(arm_axis_down[x],HIGH);
+       Serial.print(" B, ");
     } else {
        //角度が同じだった場合
        digitalWrite(arm_axis_down[x],LOW);
        digitalWrite(arm_axis_up[x],LOW);
+       Serial.print(" C, ");
     }
   }
+  Serial.println("");
 }
 
 void setup() {
